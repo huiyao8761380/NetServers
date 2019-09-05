@@ -1,38 +1,84 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections.Generic;
 
-namespace EchoServer
+
+class ClientState
 {
-	class MainClass
+	public Socket socket; 
+	public byte[] readBuff = new byte[1024]; 
+}
+
+class MainClass
+{
+	//监听Socket
+	static Socket listenfd;
+	//客户端Socket及状态信息
+	static Dictionary<Socket, ClientState> clients = new Dictionary<Socket, ClientState>();
+
+	public static void Main (string[] args)
 	{
-		public static void Main (string[] args)
-		{
-			Console.WriteLine ("Hello World!");
-			//Socket
-			Socket listenfd = new Socket(AddressFamily.InterNetwork,
-				SocketType.Stream, ProtocolType.Tcp);
-			//Bind
-			IPAddress ipAdr = IPAddress.Parse("127.0.0.1");
-			IPEndPoint ipEp = new IPEndPoint(ipAdr, 8888);
-			listenfd.Bind(ipEp);
-			//Listen
-			listenfd.Listen(0);
-			Console.WriteLine("[服务器]启动成功");
-			while (true) {
-				//Accept
-				Socket connfd = listenfd.Accept ();
-				Console.WriteLine ("[服务器]Accept");
-				//Receive
-				byte[] readBuff = new byte[1024];
-				int count = connfd.Receive (readBuff);
-				string readStr = System.Text.Encoding.UTF8.GetString (readBuff, 0, count);
-				Console.WriteLine ("[服务器接收]" + readStr);
-				//Send
-				string sendStr = System.DateTime.Now.ToString();
-				byte[] sendBytes = System.Text.Encoding.Default.GetBytes (sendStr);
-				connfd.Send (sendBytes);
+		//Socket
+		listenfd = new Socket(AddressFamily.InterNetwork,
+			SocketType.Stream, ProtocolType.Tcp);
+		//Bind
+		IPAddress ipAdr = IPAddress.Parse("127.0.0.1");
+		IPEndPoint ipEp = new IPEndPoint(ipAdr, 8888);
+		listenfd.Bind(ipEp);
+		//Listen
+		listenfd.Listen(0);
+		Console.WriteLine("[服务器]启动成功");
+		//主循环
+		while(true){
+			//检查listenfd
+			if(listenfd.Poll(0, SelectMode.SelectRead)){
+				ReadListenfd(listenfd);
 			}
+			//检查clientfd
+			foreach (ClientState s in clients.Values){
+				Socket clientfd = s.socket;
+				if(clientfd.Poll(0, SelectMode.SelectRead)){
+					if(!ReadClientfd(clientfd)){
+						break;
+					}
+				}
+			}
+			//防止cpu占用过高
+			System.Threading.Thread.Sleep(1);
 		}
+
+	}
+
+	//读取Listenfd
+	public static void ReadListenfd(Socket listenfd){
+		Console.WriteLine("Accept");
+		Socket clientfd = listenfd.Accept();
+		ClientState state = new ClientState();
+		state.socket = clientfd;
+		clients.Add(clientfd, state);
+	}
+
+	//读取Clientfd
+	public static bool ReadClientfd(Socket clientfd){
+		ClientState state = clients[clientfd];
+		int count = clientfd.Receive(state.readBuff);
+		//客户端关闭
+		if(count == 0){
+			clientfd.Close();
+			clients.Remove(clientfd);
+			Console.WriteLine("Socket Close");
+			return false;
+		}
+		//广播
+		string recvStr = System.Text.Encoding.Default.GetString(state.readBuff, 0, count);
+		Console.WriteLine("Receive " + recvStr);
+		string sendStr = clientfd.RemoteEndPoint.ToString() + ":" + recvStr;
+		byte[] sendBytes = System.Text.Encoding.Default.GetBytes(sendStr);
+		foreach (ClientState cs in clients.Values){
+			cs.socket.Send(sendBytes);
+		}
+		return true;
 	}
 }
+

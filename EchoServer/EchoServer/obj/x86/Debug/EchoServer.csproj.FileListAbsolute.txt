@@ -2,3 +2,7 @@ E:\UnityBook\Chapter1\EchoServer\EchoServer\EchoServer\bin\Debug\EchoServer.exe
 E:\UnityBook\Chapter1\EchoServer\EchoServer\EchoServer\bin\Debug\EchoServer.pdb
 E:\UnityBook\Chapter1\EchoServer\EchoServer\EchoServer\obj\x86\Debug\EchoServer.exe
 E:\UnityBook\Chapter1\EchoServer\EchoServer\EchoServer\obj\x86\Debug\EchoServer.pdb
+E:\UnityBook\Chapter2\EchoServer\EchoServer\EchoServer\bin\Debug\EchoServer.exe
+E:\UnityBook\Chapter2\EchoServer\EchoServer\EchoServer\bin\Debug\EchoServer.pdb
+E:\UnityBook\Chapter2\EchoServer\EchoServer\EchoServer\obj\x86\Debug\EchoServer.exe
+E:\UnityBook\Chapter2\EchoServer\EchoServer\EchoServer\obj\x86\Debug\EchoServer.pdb
